@@ -76,3 +76,25 @@
    {:ETag :etag
     :Key :key
     :LastModified :last-modified}))
+
+(defmacro xml-extract [roots path-spec fun]
+  (let [root (gensym 'root)
+        {:keys [out prev]}
+        (reduce
+         (fn [{:keys [out prev]} fun]
+           (let [[prev form] (fun prev)]
+             {:prev prev
+              :out (into out form)}))
+         {:prev root
+          :out []}
+         (for [[fun p] (partition-all 2 path-spec)]
+           (fn [pitem]
+             (let [item (gensym 'item)]
+               [item `[:when (= (:tag ~pitem) ~p)
+                       ~item (~fun ~pitem)]]))))
+        last-v (peek out)
+        out (pop out)
+        last-b (peek out)
+        out (pop out)]
+    `(for ~(into [root roots] out)
+       (~fun ~last-v))))

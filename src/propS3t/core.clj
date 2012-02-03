@@ -21,24 +21,23 @@
       zero?))
 
 (defn list-buckets [{:keys [aws-key aws-secret-key]}]
-  (for [[k v] (-> ((c/wrap-url http/request)
-                   (ps3/sign-request {:request-method :get
-                                  :url "/"
-                                  :headers {"Date" (ps3/date)}}
-                                 aws-key
-                                 aws-secret-key))
-                  :body
-                  (ByteArrayInputStream.)
-                  xml/parse)
-        :when (= k :content)
-        item v
-        :when (= (:tag item) :Buckets)
-        item (:content item)
-        :let [bucket-atts (:content item)]]
-    {:name (->> (filter #(= :Name (:tag %)) bucket-atts)
-                first
-                :content
-                first)}))
+  (let [{:keys [body]} ((c/wrap-url http/request)
+                        (ps3/sign-request {:request-method :get
+                                           :url "/"
+                                           :headers {"Date" (ps3/date)}}
+                                          aws-key
+                                          aws-secret-key))]
+    (ps3/xml-extract [(-> body
+                          (ByteArrayInputStream.)
+                          xml/parse)]
+                     [:content :ListAllMyBucketsResult
+                      :content :Buckets
+                      :content :Bucket]
+                     (fn [content]
+                       {:name (->> (filter #(= :Name (:tag %)) content)
+                                   first
+                                   :content
+                                   first)}))))
 
 (defn delete-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> ((c/wrap-url http/request)
@@ -90,20 +89,19 @@
      (let [params (merge {"prefix" prefix
                           "max-keys" length}
                          (when start
-                           {"marker" start}))]
-       (for [[k v] (-> ((c/wrap-url (c/wrap-query-params http/request))
-                        (ps3/sign-request {:request-method :get
-                                       :url "/"
-                                       :region (or region :us)
-                                       :bucket bucket-name
-                                       :headers {"Date" (ps3/date)}
-                                       :query-params params}
-                                      aws-key
-                                      aws-secret-key))
-                       :body
-                       ByteArrayInputStream.
-                       xml/parse)
-             :when (= k :content)
-             item v
-             :when (= (:tag item) :Contents)]
-         (ps3/extract-key-data item)))))
+                           {"marker" start}))
+           {:keys [body]} ((c/wrap-url (c/wrap-query-params http/request))
+                           (ps3/sign-request {:request-method :get
+                                              :url "/"
+                                              :region (or region :us)
+                                              :bucket bucket-name
+                                              :headers {"Date" (ps3/date)}
+                                              :query-params params}
+                                             aws-key
+                                             aws-secret-key))]
+       (ps3/xml-extract [(-> body
+                             ByteArrayInputStream.
+                             xml/parse)]
+                        [:content :ListBucketResult
+                         identity :Contents]
+                        ps3/extract-key-data))))
