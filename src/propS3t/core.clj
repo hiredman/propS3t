@@ -10,12 +10,12 @@
 (defn create-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> ((c/wrap-url http/request)
        (ps3/sign-request {:request-method :put
-                      :url "/"
-                      :region (or region :us)
-                      :bucket bucket-name
-                      :headers {"Date" (ps3/date)}}
-                     aws-key
-                     aws-secret-key))
+                          :url "/"
+                          :region (or region :us)
+                          :bucket bucket-name
+                          :headers {"Date" (ps3/date)}}
+                         aws-key
+                         aws-secret-key))
       :body
       count
       zero?))
@@ -43,12 +43,12 @@
 (defn delete-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> ((c/wrap-url http/request)
        (ps3/sign-request {:request-method :delete
-                      :url "/"
-                      :region (or region :us)
-                      :bucket bucket-name
-                      :headers {"Date" (ps3/date)}}
-                     aws-key
-                     aws-secret-key))
+                          :url "/"
+                          :region (or region :us)
+                          :bucket bucket-name
+                          :headers {"Date" (ps3/date)}}
+                         aws-key
+                         aws-secret-key))
       :body
       nil?))
 
@@ -56,15 +56,15 @@
                     object-name stream & {:keys [md5sum length]}]
   (-> ((c/wrap-url http/request)
        (ps3/sign-request {:request-method :put
-                      :url (str "/" object-name)
-                      :region (or region :us)
-                      :bucket bucket-name
-                      :headers (merge {"Date" (ps3/date)}
-                                      (when md5sum
-                                        {"Content-MD5" md5sum}))
-                      :body (InputStreamEntity. stream length)}
-                     aws-key
-                     aws-secret-key))
+                          :url (str "/" object-name)
+                          :region (or region :us)
+                          :bucket bucket-name
+                          :headers (merge {"Date" (ps3/date)}
+                                          (when md5sum
+                                            {"Content-MD5" md5sum}))
+                          :body (InputStreamEntity. stream length)}
+                         aws-key
+                         aws-secret-key))
       :body
       count
       zero?))
@@ -73,12 +73,12 @@
                    object-name & {:keys [length offset]}]
   (-> ((c/wrap-url http/request)
        (ps3/sign-request {:request-method :get
-                      :url (str "/" object-name)
-                      :region (or region :us)
-                      :bucket bucket-name
-                      :headers {"Date" (ps3/date)}}
-                     aws-key
-                     aws-secret-key))
+                          :url (str "/" object-name)
+                          :region (or region :us)
+                          :bucket bucket-name
+                          :headers {"Date" (ps3/date)}}
+                         aws-key
+                         aws-secret-key))
       :body
       ;; https://github.com/dakrone/clj-http/issues/39
       ByteArrayInputStream.))
