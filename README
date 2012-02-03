@@ -1,0 +1,25 @@
+# propS3t
+
+fly weight s3 client
+
+## Usage
+
+see tests
+
+## TODO
+
+really stream back on reads
+
+ranged gets/head
+
+multipart upload
+
+multi-region support
+
+reduced redundency storage support
+
+## License
+
+Copyright (C) 2012 Kevin Downey
+
+Distributed under the Eclipse Public License, the same as Clojure.
