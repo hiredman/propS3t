@@ -7,8 +7,10 @@
   (:import (java.io ByteArrayInputStream)
            (org.apache.http.entity InputStreamEntity)))
 
+(def request (-> http/request c/wrap-query-params c/wrap-url c/wrap-exceptions))
+
 (defn create-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
-  (-> ((c/wrap-url http/request)
+  (-> (request
        (ps3/sign-request {:request-method :put
                           :url "/"
                           :region (or region :us)
@@ -21,7 +23,7 @@
       zero?))
 
 (defn list-buckets [{:keys [aws-key aws-secret-key]}]
-  (let [{:keys [body]} ((c/wrap-url http/request)
+  (let [{:keys [body]} (request
                         (ps3/sign-request {:request-method :get
                                            :url "/"
                                            :headers {"Date" (ps3/date)}}
@@ -40,7 +42,7 @@
                                    first)}))))
 
 (defn delete-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
-  (-> ((c/wrap-url http/request)
+  (-> (request
        (ps3/sign-request {:request-method :delete
                           :url "/"
                           :region (or region :us)
@@ -53,7 +55,7 @@
 
 (defn write-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                     object-name stream & {:keys [md5sum length]}]
-  (-> ((c/wrap-url http/request)
+  (-> (request
        (ps3/sign-request {:request-method :put
                           :url (str "/" object-name)
                           :region (or region :us)
@@ -70,7 +72,7 @@
 
 (defn read-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                    object-name & {:keys [length offset]}]
-  (-> ((c/wrap-url http/request)
+  (-> (request
        (ps3/sign-request {:request-method :get
                           :url (str "/" object-name)
                           :region (or region :us)
@@ -94,7 +96,7 @@
                           "max-keys" length}
                          (when start
                            {"marker" start}))
-           {:keys [body]} ((c/wrap-url (c/wrap-query-params http/request))
+           {:keys [body]} (request
                            (ps3/sign-request {:request-method :get
                                               :url "/"
                                               :region (or region :us)
