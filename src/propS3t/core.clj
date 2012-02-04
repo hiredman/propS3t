@@ -75,7 +75,11 @@
                           :url (str "/" object-name)
                           :region (or region :us)
                           :bucket bucket-name
-                          :headers {"Date" (ps3/date)}}
+                          :headers (merge {"Date" (ps3/date)}
+                                          (when (or length offset)
+                                            {"Range" (str "bytes="
+                                                          (or offset 0)
+                                                          "-" length)}))}
                          aws-key
                          aws-secret-key))
       :body

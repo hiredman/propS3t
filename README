@@ -10,8 +10,6 @@ see tests
 
 really stream back on reads
 
-ranged gets/head
-
 multipart upload
 
 multi-region support

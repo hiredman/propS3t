@@ -59,4 +59,20 @@
   (with-open [baos (ByteArrayOutputStream.)]
     (io/copy (read-stream *creds* test-bucket "write-stream-test")
              baos)
-    (is (= "hello world" (String. (.toByteArray baos))))))
+    (is (= "hello world" (String. (.toByteArray baos)))))
+  (with-open [baos (ByteArrayOutputStream.)]
+    (io/copy (read-stream *creds* test-bucket "write-stream-test"
+                          :offset 6)
+             baos)
+    (is (= "world" (String. (.toByteArray baos)))))
+  (with-open [baos (ByteArrayOutputStream.)]
+    (io/copy (read-stream *creds* test-bucket "write-stream-test"
+                          :length 9
+                          :offset 6)
+             baos)
+    (is (= "worl" (String. (.toByteArray baos)))))
+  (with-open [baos (ByteArrayOutputStream.)]
+    (io/copy (read-stream *creds* test-bucket "write-stream-test"
+                          :length 4)
+             baos)
+    (is (= "hello" (String. (.toByteArray baos))))))
