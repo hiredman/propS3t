@@ -133,23 +133,21 @@
                   part-number
                   stream & {:keys [md5sum length]}]
   {:part part-number
-   :tag
-   (-> (request
-        (ps3/sign-request {:request-method :put
-                           :url (str "/" key
-                                     "?partNumber=" part-number
-                                     "&uploadId=" upload-id)
-                           :region (or region :us)
-                           :bucket bucket
-                           :headers (merge {"Date" (ps3/date)}
-                                           (when md5sum
-                                             {"Content-MD5" md5sum}))
-                           :body (InputStreamEntity. stream length)}
-                          aws-key
-                          aws-secret-key))
-       ((fn [{{:strs [etag]} :headers}] (subs etag 1 (dec (count etag))))))})
-
-
+   :tag (let [{{:strs [etag]} :headers}
+              (request
+               (ps3/sign-request {:request-method :put
+                                  :url (str "/" key
+                                            "?partNumber=" part-number
+                                            "&uploadId=" upload-id)
+                                  :region (or region :us)
+                                  :bucket bucket
+                                  :headers (merge {"Date" (ps3/date)}
+                                                  (when md5sum
+                                                    {"Content-MD5" md5sum}))
+                                  :body (InputStreamEntity. stream length)}
+                                 aws-key
+                                 aws-secret-key))]
+          (subs etag 1 (dec (count etag))))})
 
 (defn end-multipart [{:keys [aws-key aws-secret-key region]}
                      {:keys [upload-id]}
