@@ -98,3 +98,35 @@
         out (pop out)]
     `(for ~(into [root roots] out)
        (~fun ~last-v))))
+
+(defn extract-multipart-upload-data [item]
+  (set/rename-keys
+   (let [snag {:Bucket (comp first :content)
+               :Key (comp first :content)
+               :UploadId (comp first :content)}]
+     (reduce
+      (fn [out element]
+        (if (contains? snag (:tag element))
+          (assoc out (:tag element)
+                 ((get snag (:tag element)) element))
+          out))
+      {} item))
+   {:Bucket :bucket
+    :Key :key
+    :UploadId :upload-id}))
+
+(defn multipart-xml-fragment [parts]
+  (let [result (StringBuffer.)]
+    (.append result "<CompleteMultipartUpload>")
+    (doseq [{:keys [part tag]} parts]
+      (doto result
+        (.append "<Part>")
+        (.append "<PartNumber>")
+        (.append part)
+        (.append "</PartNumber>")
+        (.append "<ETag>")
+        (.append tag)
+        (.append "</ETag>")
+        (.append "</Part>")))
+    (.append result "</CompleteMultipartUpload>")
+    (.toString result)))

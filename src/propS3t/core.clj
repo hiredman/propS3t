@@ -111,3 +111,66 @@
                         [:content :ListBucketResult
                          identity :Contents]
                         ps3/extract-key-data))))
+
+(defn start-multipart [{:keys [aws-key aws-secret-key region]} bucket-name
+                       object-name]
+  (let [{:keys [body]} (request
+                        (ps3/sign-request {:request-method :post
+                                           :url (str "/" object-name "?uploads")
+                                           :bucket bucket-name
+                                           :region (or region :us)
+                                           :headers {"Date" (ps3/date)}}
+                                          aws-key
+                                          aws-secret-key))]
+    (first (ps3/xml-extract [(-> body
+                                 ByteArrayInputStream.
+                                 xml/parse)]
+                            [:content :InitiateMultipartUploadResult]
+                            ps3/extract-multipart-upload-data))))
+
+(defn write-part [{:keys [aws-key aws-secret-key region]}
+                  {:keys [bucket upload-id key]}
+                  part-number
+                  stream & {:keys [md5sum length]}]
+  {:part part-number
+   :tag
+   (-> (request
+        (ps3/sign-request {:request-method :put
+                           :url (str "/" key
+                                     "?partNumber=" part-number
+                                     "&uploadId=" upload-id)
+                           :region (or region :us)
+                           :bucket bucket
+                           :headers (merge {"Date" (ps3/date)}
+                                           (when md5sum
+                                             {"Content-MD5" md5sum}))
+                           :body (InputStreamEntity. stream length)}
+                          aws-key
+                          aws-secret-key))
+       ((fn [{{:strs [etag]} :headers}] (subs etag 1 (dec (count etag))))))})
+
+
+
+(defn end-multipart [{:keys [aws-key aws-secret-key region]}
+                     {:keys [upload-id]}
+                     bucket-name object-name parts]
+  (let [b (.getBytes (ps3/multipart-xml-fragment parts))
+        {:keys [body]}
+        (request
+         (ps3/sign-request {:request-method :post
+                            :url (str "/" object-name "?uploadId="
+                                      upload-id)
+                            :bucket bucket-name
+                            :region (or region :us)
+                            :headers {"Date" (ps3/date)}
+                            :body b
+                            :length (count b)}
+                           aws-key
+                           aws-secret-key))]
+    (first (ps3/xml-extract [(-> body
+                                 ByteArrayInputStream.
+                                 xml/parse)]
+                            [:content :CompleteMultipartUploadResult
+                             :content :ETag]
+                            (fn [[t]]
+                              (subs t 1 (dec (count t))))))))

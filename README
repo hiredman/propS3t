@@ -10,11 +10,11 @@ see tests
 
 really stream back on reads
 
-multipart upload
-
 multi-region support
 
 reduced redundency storage support
+
+metadata read?
 
 ## License
 

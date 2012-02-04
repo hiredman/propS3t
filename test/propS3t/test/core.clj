@@ -20,6 +20,7 @@
                   (f))))
 
 (comment
+
   (deftest t-bucket-life-cycle
     (let [b (str (UUID/randomUUID))]
       (try
@@ -30,7 +31,25 @@
         (finally
          (is (delete-bucket {:aws-key key
                              :aws-secret-key skey}
-                            b)))))))
+                            b))))))
+
+  (deftest t-multipart-upload
+    (let [{:keys [upload-id key bucket] :as mp}
+          (start-multipart *creds* test-bucket "multipart-test")]
+      (is (and upload-id key bucket))
+      (is (= test-bucket bucket))
+      (is (= key "multipart-test"))
+      (let [five-megs (.getBytes (apply str (repeat (* 5 1024 1024) \a)))
+            tags (doall (pmap #(write-part *creds* mp (inc %)
+                                           (ByteArrayInputStream. five-megs)
+                                           :length (count five-megs))
+                              (range 2)))]
+        (end-multipart *creds* mp test-bucket "multipart-test" tags)
+        (with-open [baos (ByteArrayOutputStream.)]
+          (io/copy (read-stream *creds* test-bucket "multipart-test")
+                   baos)
+          (is (= (* 2 (count five-megs)) (count (.toByteArray baos))))))))
+  )
 
 (deftest t-test-bucket-exists
   (is (contains? (set (map :name (list-buckets *creds*))) test-bucket)))
