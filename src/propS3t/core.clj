@@ -4,31 +4,29 @@
             [clojure.xml :as xml]
             [clojure.set :as set]
             [propS3t.support :as ps3])
-  (:import (java.io ByteArrayInputStream)
-           (org.apache.http.entity InputStreamEntity)))
+  (:import (java.io ByteArrayInputStream)))
 
-(def request (-> http/request c/wrap-query-params c/wrap-url c/wrap-exceptions))
+(def request (-> http/request c/wrap-query-params c/wrap-url c/wrap-exceptions
+                 ps3/wrap-aws-signature))
 
 (defn create-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
-  (-> (request
-       (ps3/sign-request {:request-method :put
-                          :url "/"
-                          :region (or region :us)
-                          :bucket bucket-name
-                          :headers {"Date" (ps3/date)}}
-                         aws-key
-                         aws-secret-key))
+  (-> (request {:request-method :put
+                :url "/"
+                :region (or region :us)
+                :bucket bucket-name
+                :headers {"Date" (ps3/date)}}
+               aws-key
+               aws-secret-key)
       :body
       count
       zero?))
 
 (defn list-buckets [{:keys [aws-key aws-secret-key]}]
-  (let [{:keys [body]} (request
-                        (ps3/sign-request {:request-method :get
-                                           :url "/"
-                                           :headers {"Date" (ps3/date)}}
-                                          aws-key
-                                          aws-secret-key))]
+  (let [{:keys [body]} (request {:request-method :get
+                                 :url "/"
+                                 :headers {"Date" (ps3/date)}}
+                                aws-key
+                                aws-secret-key)]
     (ps3/xml-extract [(-> body
                           (ByteArrayInputStream.)
                           xml/parse)]
@@ -42,48 +40,46 @@
                                    first)}))))
 
 (defn delete-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
-  (-> (request
-       (ps3/sign-request {:request-method :delete
-                          :url "/"
-                          :region (or region :us)
-                          :bucket bucket-name
-                          :headers {"Date" (ps3/date)}}
-                         aws-key
-                         aws-secret-key))
+  (-> (request {:request-method :delete
+                :url "/"
+                :region (or region :us)
+                :bucket bucket-name
+                :headers {"Date" (ps3/date)}}
+               aws-key
+               aws-secret-key)
       :body
       nil?))
 
 (defn write-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                     object-name stream & {:keys [md5sum length]}]
-  (-> (request
-       (ps3/sign-request {:request-method :put
-                          :url (str "/" object-name)
-                          :region (or region :us)
-                          :bucket bucket-name
-                          :headers (merge {"Date" (ps3/date)}
-                                          (when md5sum
-                                            {"Content-MD5" md5sum}))
-                          :body (InputStreamEntity. stream length)}
-                         aws-key
-                         aws-secret-key))
+  (-> (request {:request-method :put
+                :url (str "/" object-name)
+                :region (or region :us)
+                :bucket bucket-name
+                :headers (merge {"Date" (ps3/date)}
+                                (when md5sum
+                                  {"Content-MD5" md5sum}))
+                :length length
+                :body stream}
+               aws-key
+               aws-secret-key)
       :body
       count
       zero?))
 
 (defn read-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                    object-name & {:keys [length offset]}]
-  (-> (request
-       (ps3/sign-request {:request-method :get
-                          :url (str "/" object-name)
-                          :region (or region :us)
-                          :bucket bucket-name
-                          :headers (merge {"Date" (ps3/date)}
-                                          (when (or length offset)
-                                            {"Range" (str "bytes="
-                                                          (or offset 0)
-                                                          "-" length)}))}
-                         aws-key
-                         aws-secret-key))
+  (-> (request {:request-method :get
+                :url (str "/" object-name)
+                :region (or region :us)
+                :bucket bucket-name
+                :headers (merge {"Date" (ps3/date)}
+                                (when (or length offset)
+                                  {"Range" (str "bytes="
+                                                (or offset 0)
+                                                "-" length)}))}
+               aws-key
+               aws-secret-key)
       :body
       ;; https://github.com/dakrone/clj-http/issues/39
       ByteArrayInputStream.))
@@ -96,15 +92,14 @@
                           "max-keys" length}
                          (when start
                            {"marker" start}))
-           {:keys [body]} (request
-                           (ps3/sign-request {:request-method :get
-                                              :url "/"
-                                              :region (or region :us)
-                                              :bucket bucket-name
-                                              :headers {"Date" (ps3/date)}
-                                              :query-params params}
-                                             aws-key
-                                             aws-secret-key))]
+           {:keys [body]} (request {:request-method :get
+                                    :url "/"
+                                    :region (or region :us)
+                                    :bucket bucket-name
+                                    :headers {"Date" (ps3/date)}
+                                    :query-params params}
+                                   aws-key
+                                   aws-secret-key)]
        (ps3/xml-extract [(-> body
                              ByteArrayInputStream.
                              xml/parse)]
@@ -114,14 +109,13 @@
 
 (defn start-multipart [{:keys [aws-key aws-secret-key region]} bucket-name
                        object-name]
-  (let [{:keys [body]} (request
-                        (ps3/sign-request {:request-method :post
-                                           :url (str "/" object-name "?uploads")
-                                           :bucket bucket-name
-                                           :region (or region :us)
-                                           :headers {"Date" (ps3/date)}}
-                                          aws-key
-                                          aws-secret-key))]
+  (let [{:keys [body]} (request {:request-method :post
+                                 :url (str "/" object-name "?uploads")
+                                 :bucket bucket-name
+                                 :region (or region :us)
+                                 :headers {"Date" (ps3/date)}}
+                                aws-key
+                                aws-secret-key)]
     (first (ps3/xml-extract [(-> body
                                  ByteArrayInputStream.
                                  xml/parse)]
@@ -132,39 +126,36 @@
                   {:keys [bucket upload-id key]}
                   part-number
                   stream & {:keys [md5sum length]}]
-  {:part part-number
-   :tag (let [{{:strs [etag]} :headers}
-              (request
-               (ps3/sign-request {:request-method :put
-                                  :url (str "/" key
-                                            "?partNumber=" part-number
-                                            "&uploadId=" upload-id)
-                                  :region (or region :us)
-                                  :bucket bucket
-                                  :headers (merge {"Date" (ps3/date)}
-                                                  (when md5sum
-                                                    {"Content-MD5" md5sum}))
-                                  :body (InputStreamEntity. stream length)}
-                                 aws-key
-                                 aws-secret-key))]
-          (subs etag 1 (dec (count etag))))})
+  (let [{{:strs [etag]} :headers} (request {:request-method :put
+                                            :url (str "/" key
+                                                      "?partNumber=" part-number
+                                                      "&uploadId=" upload-id)
+                                            :region (or region :us)
+                                            :bucket bucket
+                                            :headers (merge
+                                                      {"Date" (ps3/date)}
+                                                      (when md5sum
+                                                        {"Content-MD5" md5sum}))
+                                            :length length
+                                            :body stream}
+                                           aws-key
+                                           aws-secret-key)]
+    {:part part-number :tag (subs etag 1 (dec (count etag)))}))
 
 (defn end-multipart [{:keys [aws-key aws-secret-key region]}
                      {:keys [upload-id]}
                      bucket-name object-name parts]
   (let [b (.getBytes (ps3/multipart-xml-fragment parts))
-        {:keys [body]}
-        (request
-         (ps3/sign-request {:request-method :post
-                            :url (str "/" object-name "?uploadId="
-                                      upload-id)
-                            :bucket bucket-name
-                            :region (or region :us)
-                            :headers {"Date" (ps3/date)}
-                            :body b
-                            :length (count b)}
-                           aws-key
-                           aws-secret-key))]
+        {:keys [body]} (request {:request-method :post
+                                 :url (str "/" object-name "?uploadId="
+                                           upload-id)
+                                 :bucket bucket-name
+                                 :region (or region :us)
+                                 :headers {"Date" (ps3/date)}
+                                 :body b
+                                 :length (count b)}
+                                aws-key
+                                aws-secret-key)]
     (first (ps3/xml-extract [(-> body
                                  ByteArrayInputStream.
                                  xml/parse)]

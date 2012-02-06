@@ -61,6 +61,10 @@
                      (format (get region-end-points region) bucket)
                      bucket-ops-end-point)))))
 
+(defn wrap-aws-signature [client]
+  (fn [req aws-key aws-secret-key]
+    (client (sign-request req aws-key aws-secret-key))))
+
 (defn extract-key-data [item]
   (set/rename-keys 
    (let [snag {:ETag (comp first :content)
