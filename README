@@ -8,13 +8,13 @@ see tests
 
 ## TODO
 
-really stream back on reads
-
 multi-region support
 
 reduced redundency storage support
 
 metadata read?
+
+better error handling
 
 ## License
 
