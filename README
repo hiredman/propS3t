@@ -16,6 +16,8 @@ metadata read?
 
 better error handling
 
+abort multipart upload
+
 ## License
 
 Copyright (C) 2012 Kevin Downey
