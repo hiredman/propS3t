@@ -100,8 +100,8 @@
                          identity :Contents]
                         ps3/extract-key-data))))
 
-(defn start-multipart [{:keys [aws-key aws-secret-key region]} bucket-name
-                       object-name]
+(defn start-multipart
+  [{:keys [aws-key aws-secret-key region]} bucket-name object-name]
   (let [{:keys [body]} (ps3/request {:request-method :post
                                      :url (str "/" object-name "?uploads")
                                      :bucket bucket-name
@@ -115,10 +115,9 @@
                             [:content :InitiateMultipartUploadResult]
                             ps3/extract-multipart-upload-data))))
 
-(defn write-part [{:keys [aws-key aws-secret-key region]}
-                  {:keys [bucket upload-id key]}
-                  part-number
-                  stream & {:keys [md5sum length]}]
+(defn write-part
+  [{:keys [aws-key aws-secret-key region]} {:keys [bucket upload-id key]}
+   part-number stream & {:keys [md5sum length]}]
   (let [{{:strs [etag]} :headers}
         (ps3/request {:request-method :put
                       :url (str "/" key
@@ -136,9 +135,9 @@
                      aws-secret-key)]
     {:part part-number :tag (subs etag 1 (dec (count etag)))}))
 
-(defn end-multipart [{:keys [aws-key aws-secret-key region]}
-                     {:keys [upload-id]}
-                     bucket-name object-name parts]
+(defn end-multipart
+  [{:keys [aws-key aws-secret-key region]} {:keys [upload-id]} bucket-name
+   object-name parts]
   (let [b (.getBytes (ps3/multipart-xml-fragment parts))
         {:keys [body]} (ps3/request {:request-method :post
                                      :url (str "/" object-name "?uploadId="

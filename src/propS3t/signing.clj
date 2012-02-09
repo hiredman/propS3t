@@ -18,9 +18,9 @@
           date
           url))
 
-(defn sign-request [{:keys [url request-method headers bucket region]
-                     :as m}
-                    aws-key aws-secret-key]
+(defn sign-request
+  [{:keys [url request-method headers bucket region] :as m}
+   aws-key aws-secret-key]
   (let [sts
         (string-to-sign (.toUpperCase (name request-method))
                         ""
