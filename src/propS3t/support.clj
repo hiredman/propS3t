@@ -1,5 +1,7 @@
 (ns propS3t.support
-  (:require [clojure.set :as set])
+  (:require [clojure.set :as set]
+            [clj-http.core :as http]
+            [clj-http.client :as c])
   (:import (javax.crypto Mac)
            (javax.crypto.spec SecretKeySpec)
            (sun.misc BASE64Encoder)
@@ -134,3 +136,9 @@
         (.append "</Part>")))
     (.append result "</CompleteMultipartUpload>")
     (.toString result)))
+
+(def request (-> http/request
+                 c/wrap-query-params
+                 c/wrap-url
+                 c/wrap-exceptions
+                 wrap-aws-signature))
