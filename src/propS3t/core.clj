@@ -20,20 +20,20 @@
 (defn list-buckets [{:keys [aws-key aws-secret-key]}]
   (let [{:keys [body]} (ps3/request {:request-method :get
                                      :url "/"
-                                     :headers {"Date" (ps3/date)}}
+                                     :headers {"Date" (ps3/date)}
+                                     :as :stream}
                                     aws-key
                                     aws-secret-key)]
-    (ps3/xml-extract [(-> body
-                          (ByteArrayInputStream.)
-                          xml/parse)]
-                     [:content :ListAllMyBucketsResult
-                      :content :Buckets
-                      :content :Bucket]
-                     (fn [content]
-                       {:name (->> (filter #(= :Name (:tag %)) content)
-                                   first
-                                   :content
-                                   first)}))))
+    (with-open [body body]
+      (ps3/xml-extract [(xml/parse body)]
+                       [:content :ListAllMyBucketsResult
+                        :content :Buckets
+                        :content :Bucket]
+                       (fn [content]
+                         {:name (->> (filter #(= :Name (:tag %)) content)
+                                     first
+                                     :content
+                                     first)})))))
 
 (defn delete-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> (ps3/request {:request-method :delete
@@ -125,15 +125,15 @@
                                         :region (or region :us)
                                         :bucket bucket-name
                                         :headers {"Date" (ps3/date)}
+                                        :as :stream
                                         :query-params params}
                                        aws-key
                                        aws-secret-key)]
-       (ps3/xml-extract [(-> body
-                             ByteArrayInputStream.
-                             xml/parse)]
-                        [:content :ListBucketResult
-                         identity :Contents]
-                        ps3/extract-key-data))))
+       (with-open [body body]
+         (ps3/xml-extract [(xml/parse body)]
+                          [:content :ListBucketResult
+                           identity :Contents]
+                          ps3/extract-key-data)))))
 
 (defn start-multipart
   [{:keys [aws-key aws-secret-key region]} bucket-name object-name]
@@ -141,14 +141,14 @@
                                      :url (str "/" object-name "?uploads")
                                      :bucket bucket-name
                                      :region (or region :us)
+                                     :as :stream
                                      :headers {"Date" (ps3/date)}}
                                     aws-key
                                     aws-secret-key)]
-    (first (ps3/xml-extract [(-> body
-                                 ByteArrayInputStream.
-                                 xml/parse)]
-                            [:content :InitiateMultipartUploadResult]
-                            ps3/extract-multipart-upload-data))))
+    (with-open [body body]
+      (first (ps3/xml-extract [(xml/parse body)]
+                              [:content :InitiateMultipartUploadResult]
+                              ps3/extract-multipart-upload-data)))))
 
 (defn write-part
   [{:keys [aws-key aws-secret-key region]} {:keys [bucket upload-id key]}
@@ -181,13 +181,13 @@
                                      :region (or region :us)
                                      :headers {"Date" (ps3/date)}
                                      :body b
+                                     :as :stream
                                      :length (count b)}
                                     aws-key
                                     aws-secret-key)]
-    (first (ps3/xml-extract [(-> body
-                                 ByteArrayInputStream.
-                                 xml/parse)]
-                            [:content :CompleteMultipartUploadResult
-                             :content :ETag]
-                            (fn [[t]]
-                              (subs t 1 (dec (count t))))))))
+    (with-open [body body]
+      (first (ps3/xml-extract [(xml/parse body)]
+                              [:content :CompleteMultipartUploadResult
+                               :content :ETag]
+                              (fn [[t]]
+                                (subs t 1 (dec (count t)))))))))
