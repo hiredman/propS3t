@@ -42,4 +42,3 @@
 (defn wrap-aws-signature [client]
   (fn [req aws-key aws-secret-key]
     (client (sign-request req aws-key aws-secret-key))))
-
