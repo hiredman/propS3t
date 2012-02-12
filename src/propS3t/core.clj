@@ -85,8 +85,9 @@
                       :body
                       count
                       zero?)])
-        (catch Exception e
-          (deliver result [nil e]))))
+        (catch Throwable t
+          (deliver result [nil t])
+          (throw t))))
     (proxy [FilterOutputStream] [pout]
       (close []
         (try
