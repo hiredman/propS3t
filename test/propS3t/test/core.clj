@@ -67,7 +67,7 @@
                        (.getBytes "hello world"))
                       :length 11)))
   (is (= 10 (count (list-bucket *creds* test-bucket "" 10))))
-  (is (= 4 (count (list-bucket *creds* test-bucket "" 10
+  (is (= 4 (count (list-bucket *creds* test-bucket "write-stream-test" 10
                                "write-stream-test5")))))
 
 (deftest t-read-stream
