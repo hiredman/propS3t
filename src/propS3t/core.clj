@@ -1,7 +1,9 @@
 (ns propS3t.core
   (:require [clojure.xml :as xml]
             [propS3t.support :as ps3])
-  (:import (java.io ByteArrayInputStream)))
+  (:import (java.io PipedOutputStream
+                    PipedInputStream
+                    FilterOutputStream)))
 
 (defn create-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> (ps3/request {:request-method :put
@@ -60,6 +62,39 @@
       :body
       count
       zero?))
+
+(defn output-stream [{:keys [aws-key aws-secret-key region]} bucket-name
+                     object-name & {:keys [md5sum length]}]
+  (let [pin (PipedInputStream.)
+        pout (PipedOutputStream. pin)
+        result (promise)]
+    (future
+      (try
+        (deliver result
+                 [(-> (ps3/request {:request-method :put
+                                    :url (str "/" object-name)
+                                    :region (or region :us)
+                                    :bucket bucket-name
+                                    :headers (merge {"Date" (ps3/date)}
+                                                    (when md5sum
+                                                      {"Content-MD5" md5sum}))
+                                    :length length
+                                    :body pin}
+                                   aws-key
+                                   aws-secret-key)
+                      :body
+                      count
+                      zero?)])
+        (catch Exception e
+          (deliver result [nil e]))))
+    (proxy [FilterOutputStream] [pout]
+      (close []
+        (try
+          (proxy-super close)
+          (finally
+           (let [[_ error] @result]
+             (when error
+               (throw error)))))))))
 
 (defn read-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                    object-name & {:keys [length offset]}]

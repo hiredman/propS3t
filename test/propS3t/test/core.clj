@@ -95,3 +95,15 @@
                           :length 4)
              baos)
     (is (= "hello" (String. (.toByteArray baos))))))
+
+(deftest t-output-stream
+  (with-open [s (output-stream *creds* test-bucket "write-stream2-test"
+                               :length 4)]
+    (io/copy (.getBytes "hello") s))
+  (is (contains? (set (map :key (list-bucket *creds* test-bucket "" 1000)))
+                 "write-stream2-test"))
+  (with-open [baos (ByteArrayOutputStream.)]
+    (io/copy (read-stream *creds* test-bucket "write-stream2-test"
+                          :length 4)
+             baos)
+    (is (= "hello" (String. (.toByteArray baos))))))
