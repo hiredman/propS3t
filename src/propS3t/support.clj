@@ -4,7 +4,9 @@
             [clj-http.client :as c]
             [propS3t.signing :as s])
   (:import (java.util Date)
-           (java.text SimpleDateFormat FieldPosition)))
+           (java.text SimpleDateFormat FieldPosition)
+           (java.io PipedOutputStream
+                    PipedInputStream)))
 
 ;; if you have your own date-formater bind this so you are not making
 ;; requests all the time
@@ -96,3 +98,8 @@
                  c/wrap-url
                  c/wrap-exceptions
                  s/wrap-aws-signature))
+
+(defn pipe []
+  (let [pin (PipedInputStream.)
+        pout (PipedOutputStream. pin)]
+    {:inputstream pin :outputstream pout}))
