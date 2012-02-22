@@ -18,6 +18,8 @@ better error handling
 
 abort multipart upload
 
+md5sum checking
+
 ## License
 
 Copyright (C) 2012 Kevin Downey
