@@ -98,7 +98,7 @@
 
 (deftest t-output-stream
   (with-open [s (output-stream *creds* test-bucket "write-stream2-test"
-                               :length 4)]
+                               :length 5)]
     (io/copy (.getBytes "hello") s))
   (is (contains? (set (map :key (list-bucket *creds* test-bucket "" 1000)))
                  "write-stream2-test"))

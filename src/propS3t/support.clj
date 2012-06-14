@@ -96,6 +96,8 @@
 (def request (-> http/request
                  c/wrap-query-params
                  c/wrap-url
+                 c/wrap-input-coercion
+                 c/wrap-output-coercion
                  c/wrap-exceptions
                  s/wrap-aws-signature))
 
