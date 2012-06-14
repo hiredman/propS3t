@@ -65,26 +65,24 @@
                      object-name & {:keys [md5sum length]}]
   (let [the-pipe (ps3/pipe)
         fut (future
-              (-> (ps3/request {:request-method :put
-                                :url (str "/" object-name)
-                                :region (or region :us)
-                                :bucket bucket-name
-                                :headers (merge {"Date" (ps3/date)}
-                                                (when md5sum
-                                                  {"Content-MD5" md5sum}))
-                                :length length
-                                :body (:inputstream the-pipe)}
-                               aws-key
-                               aws-secret-key)
-                  :body
-                  count
-                  zero?))]
+              (ps3/request {:request-method :put
+                            :url (str "/" object-name)
+                            :region (or region :us)
+                            :bucket bucket-name
+                            :headers (merge {"Date" (ps3/date)}
+                                            (when md5sum
+                                              {"Content-MD5" md5sum}))
+                            :length length
+                            :body (:inputstream the-pipe)}
+                           aws-key
+                           aws-secret-key))]
     (proxy [FilterOutputStream] [(:outputstream the-pipe)]
       (close []
         (try
           (proxy-super close)
           (finally
-           @fut))))))
+            (when-not (zero? (count (:body @fut)))
+              (throw (Exception. (str "Uh Oh " (:body @fut)))))))))))
 
 (defn read-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                    object-name & {:keys [length offset]}]
