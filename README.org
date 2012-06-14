@@ -1,0 +1,29 @@
+#+TITLE: propS3t
+* Description
+
+A fly weight s3 client for when a jets3t is too much. Written on top
+of the S3 rest api.
+
+Also an attempt to support 80% of jets3t features with 20% of the code.
+
+* Usage
+
+#+BEGIN_SRC clojure
+[props3t "0.0.1"]
+#+END_SRC
+
+see tests
+
+* TODO
+ - multi-region support
+ - reduced redundency storage support
+ - metadata read?
+ - better error handling
+ - abort multipart upload
+ - md5sum checking
+
+* License
+
+Copyright (C) 2012 Kevin Downey
+
+Distributed under the Eclipse Public License, the same as Clojure.
