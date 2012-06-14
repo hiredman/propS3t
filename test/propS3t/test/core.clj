@@ -1,3 +1,10 @@
+;; to run the tests you need an aws account
+;; and a file test/props3t/aws.clj that contains something like
+;; (def key "...")
+;; (def skey "...")
+;; (def test-bucket "...")
+;; for your aws account
+
 (ns propS3t.test.core
   (:refer-clojure :exclude [key])
   (:load "aws") ;; aws credentials and test bucket name
