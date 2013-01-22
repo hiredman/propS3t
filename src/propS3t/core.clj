@@ -1,7 +1,8 @@
 (ns propS3t.core
   (:require [clojure.xml :as xml]
             [propS3t.support :as ps3])
-  (:import (java.io FilterOutputStream)))
+  (:import (java.io FilterOutputStream)
+           (java.net URLEncoder)))
 
 (defn create-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> (ps3/request {:request-method :put
@@ -47,7 +48,7 @@
 (defn write-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                     object-name stream & {:keys [md5sum length]}]
   (-> (ps3/request {:request-method :put
-                    :url (str "/" object-name)
+                    :url (str "/" (URLEncoder/encode object-name))
                     :region (or region :us)
                     :bucket bucket-name
                     :headers (merge {"Date" (ps3/date)}
@@ -66,7 +67,7 @@
   (let [the-pipe (ps3/pipe)
         fut (future
               (ps3/request {:request-method :put
-                            :url (str "/" object-name)
+                            :url (str "/" (URLEncoder/encode object-name))
                             :region (or region :us)
                             :bucket bucket-name
                             :headers (merge {"Date" (ps3/date)}
@@ -87,7 +88,7 @@
 (defn read-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                    object-name & {:keys [length offset]}]
   (-> (ps3/request {:request-method :get
-                    :url (str "/" object-name)
+                    :url (str "/" (URLEncoder/encode object-name))
                     :region (or region :us)
                     :bucket bucket-name
                     :as :stream
@@ -126,7 +127,7 @@
 (defn start-multipart
   [{:keys [aws-key aws-secret-key region]} bucket-name object-name]
   (let [{:keys [body]} (ps3/request {:request-method :post
-                                     :url (str "/" object-name "?uploads")
+                                     :url (str "/" (URLEncoder/encode object-name) "?uploads")
                                      :bucket bucket-name
                                      :region (or region :us)
                                      :as :stream
@@ -139,11 +140,13 @@
                               ps3/extract-multipart-upload-data)))))
 
 (defn write-part
-  [{:keys [aws-key aws-secret-key region]} {:keys [bucket upload-id key]}
-   part-number stream & {:keys [md5sum length]}]
+  [{:keys [aws-key aws-secret-key region]}
+   {:keys [bucket upload-id key]}
+   part-number stream
+   & {:keys [md5sum length]}]
   (let [{{:strs [etag]} :headers}
         (ps3/request {:request-method :put
-                      :url (str "/" key
+                      :url (str "/" (URLEncoder/encode key)
                                 "?partNumber=" part-number
                                 "&uploadId=" upload-id)
                       :region (or region :us)
@@ -163,7 +166,7 @@
    object-name parts]
   (let [b (.getBytes (ps3/multipart-xml-fragment parts))
         {:keys [body]} (ps3/request {:request-method :post
-                                     :url (str "/" object-name "?uploadId="
+                                     :url (str "/" (URLEncoder/encode object-name) "?uploadId="
                                                upload-id)
                                      :bucket bucket-name
                                      :region (or region :us)
