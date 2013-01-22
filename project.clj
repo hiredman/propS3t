@@ -1,4 +1,4 @@
-(defproject props3t "0.0.2"
+(defproject props3t "0.0.3-SNAPSHOT"
   :description "FIXME: write description"
   :dependencies [[clojure "1.4.0"]
                  [clj-http "0.4.3"]])
