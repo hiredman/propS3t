@@ -9,7 +9,7 @@ Also an attempt to support 80% of jets3t features with 20% of the code.
 * Usage
 
 #+BEGIN_SRC clojure
-[props3t "0.0.2"]
+[props3t "0.0.3"]
 #+END_SRC
 
 see tests
