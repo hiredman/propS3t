@@ -4,7 +4,7 @@
            (javax.crypto.spec SecretKeySpec)
            (sun.misc BASE64Encoder)))
 
-(defn sign [secret-key string-to-sign]
+(defn sign [^String secret-key ^String string-to-sign]
   (let [key (SecretKeySpec. (.getBytes secret-key) "HmacSHA1")
         mac (Mac/getInstance "HmacSHA1")]
     (.init mac key)

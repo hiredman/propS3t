@@ -23,7 +23,7 @@
                                      :as :stream}
                                     aws-key
                                     aws-secret-key)]
-    (with-open [body body]
+    (with-open [^java.io.Closeable body body]
       (ps3/xml-extract [(xml/parse body)]
                        [:content :ListAllMyBucketsResult
                         :content :Buckets
@@ -89,10 +89,11 @@
                             :body (:inputstream the-pipe)}
                            aws-key
                            aws-secret-key))]
-    (proxy [FilterOutputStream] [(:outputstream the-pipe)]
+    (proxy [FilterOutputStream] [^java.io.Closeable (:outputstream the-pipe)]
       (close []
         (try
-          (proxy-super close)
+          (let [^java.io.Closeable this this]
+            (proxy-super close))
           (finally
             (when-not (zero? (count (:body @fut)))
               (throw (Exception. (str "Uh Oh " (:body @fut)))))))))))
@@ -130,7 +131,7 @@
                                         :query-params params}
                                        aws-key
                                        aws-secret-key)]
-       (with-open [body body]
+       (with-open [^java.io.Closeable body body]
          (ps3/xml-extract [(xml/parse body)]
                           [:content :ListBucketResult
                            identity :Contents]
@@ -146,7 +147,7 @@
                                      :headers {"Date" (ps3/date)}}
                                     aws-key
                                     aws-secret-key)]
-    (with-open [body body]
+    (with-open [^java.io.Closeable body body]
       (first (ps3/xml-extract [(xml/parse body)]
                               [:content :InitiateMultipartUploadResult]
                               ps3/extract-multipart-upload-data)))))
@@ -176,7 +177,7 @@
 (defn end-multipart
   [{:keys [aws-key aws-secret-key region]} {:keys [upload-id]} bucket-name
    object-name parts]
-  (let [b (.getBytes (ps3/multipart-xml-fragment parts))
+  (let [b (.getBytes ^String (ps3/multipart-xml-fragment parts))
         {:keys [body]} (ps3/request {:request-method :post
                                      :url (str "/" (URLEncoder/encode object-name) "?uploadId="
                                                upload-id)
@@ -188,7 +189,7 @@
                                      :length (count b)}
                                     aws-key
                                     aws-secret-key)]
-    (with-open [body body]
+    (with-open [^java.io.Closeable body body]
       (first (ps3/xml-extract [(xml/parse body)]
                               [:content :CompleteMultipartUploadResult
                                :content :ETag]

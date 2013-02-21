@@ -20,11 +20,12 @@
 (defn date []
   (let [date (Date.)
         sb (StringBuffer.)]
-    (.toString (.format (or *date-formater* (date-formater))
+    (.toString ^StringBuffer
+               (.format (or *date-formater* (date-formater))
                         date sb (FieldPosition. 0)))))
 
 (defn extract-key-data [item]
-  (set/rename-keys 
+  (set/rename-keys
    (let [snag {:ETag (comp first :content)
                :Key (comp first :content)
                :LastModified (comp first :content)}]

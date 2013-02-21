@@ -36,9 +36,9 @@
                            b))
         (is (contains? (set (map :name (list-buckets *creds*))) b))
         (finally
-         (is (delete-bucket {:aws-key key
-                             :aws-secret-key skey}
-                            b))))))
+          (is (delete-bucket {:aws-key key
+                              :aws-secret-key skey}
+                             b))))))
 
   (deftest t-multipart-upload
     (let [{:keys [upload-id key bucket] :as mp}
