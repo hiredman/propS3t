@@ -5,3 +5,4 @@ pom.xml
 .lein-failures
 .lein-deps-sum
 test/propS3t/test/aws.clj
+/target
