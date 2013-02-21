@@ -113,3 +113,14 @@
               stream (read-stream *creds* test-bucket "write-stream2-test")]
     (io/copy stream baos)
     (is (= "hello" (String. (.toByteArray baos))))))
+
+(deftest t-delete-object
+  (is (write-stream *creds* test-bucket "write-stream-test"
+                    (ByteArrayInputStream.
+                     (.getBytes "hello world"))
+                    :length 11))
+  (is (contains? (set (map :key (list-bucket *creds* test-bucket "" 10)))
+                 "write-stream-test"))
+  (is (delete-object *creds* test-bucket "write-stream-test"))
+  (is (not (contains? (set (map :key (list-bucket *creds* test-bucket "" 10)))
+                      "write-stream-test"))))

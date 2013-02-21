@@ -45,6 +45,18 @@
       :body
       nil?))
 
+(defn delete-object [{:keys [aws-key aws-secret-key region]} bucket-name object-name]
+  (-> (ps3/request {:request-method :delete
+                    :url (str "/" (URLEncoder/encode object-name))
+                    :region (or region :us)
+                    :bucket bucket-name
+                    :headers {"Date" (ps3/date)}}
+                   aws-key
+                   aws-secret-key)
+      :body
+      count
+      zero?))
+
 (defn write-stream [{:keys [aws-key aws-secret-key region]} bucket-name
                     object-name stream & {:keys [md5sum length]}]
   (-> (ps3/request {:request-method :put
