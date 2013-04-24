@@ -18,13 +18,13 @@
 (def ^{:dynamic true} *creds*)
 
 (use-fixtures :once
-              (fn [f]
-                (create-bucket {:aws-key key
-                                :aws-secret-key skey}
-                               test-bucket)
-                (binding [*creds* {:aws-key key
-                                   :aws-secret-key skey}]
-                  (f))))
+  (fn [f]
+    (create-bucket {:aws-key key
+                    :aws-secret-key skey}
+                   test-bucket)
+    (binding [*creds* {:aws-key key
+                       :aws-secret-key skey}]
+      (f))))
 
 (comment
 
