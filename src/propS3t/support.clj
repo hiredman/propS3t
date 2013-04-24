@@ -25,20 +25,22 @@
                         date sb (FieldPosition. 0)))))
 
 (defn extract-key-data [item]
-  (set/rename-keys
-   (let [snag {:ETag (comp first :content)
-               :Key (comp first :content)
-               :LastModified (comp first :content)}]
-     (reduce
-      (fn [out element]
-        (if (contains? snag (:tag element))
-          (assoc out (:tag element)
-                 ((get snag (:tag element)) element))
-          out))
-      {} (:content item)))
-   {:ETag :etag
-    :Key :key
-    :LastModified :last-modified}))
+  (let [{text :last-modified :as m}
+        (set/rename-keys
+         (let [snag {:ETag (comp first :content)
+                     :Key (comp first :content)
+                     :LastModified (comp first :content)}]
+           (reduce
+            (fn [out element]
+              (if (contains? snag (:tag element))
+                (assoc out (:tag element)
+                       ((get snag (:tag element)) element))
+                out))
+            {} (:content item)))
+         {:ETag :etag
+          :Key :key
+          :LastModified :last-modified})]
+    (assoc m :last-modified (.getTime (javax.xml.bind.DatatypeConverter/parseDateTime text)))))
 
 (defmacro xml-extract [roots path-spec fun]
   (let [root (gensym 'root)
