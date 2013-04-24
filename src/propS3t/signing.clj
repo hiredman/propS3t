@@ -10,22 +10,32 @@
     (.init mac key)
     (.encode (BASE64Encoder.) (.doFinal mac (.getBytes string-to-sign)))))
 
-(defn string-to-sign [verb md5 type date url]
-  (format "%s\n%s\n%s\n%s\n%s"
-          verb
-          md5
-          type
-          date
-          url))
+(defn string-to-sign [& args]
+  (apply str (interpose \newline (remove nil? args))))
 
 (defn sign-request
   [{:keys [url request-method headers bucket region] :as m}
    aws-key aws-secret-key]
-  (let [sts
+  (let [headers (into {} (for [[k v] headers] [(.toLowerCase (name k)) v]))
+        sts
         (string-to-sign (.toUpperCase (name request-method))
-                        ""
-                        ""
-                        (get headers "Date")
+                        (if (contains? headers "content-md5")
+                          (get headers "content-md5")
+                          "")
+                        (if (contains? headers "content-type")
+                          (get headers "content-type")
+                          "")
+                        (get headers "date")
+                        (let [s (apply str
+                                       (interpose \newline
+                                                  (for [[n v] headers
+                                                        :let [header-name (.toLowerCase (name n))]
+                                                        :when (not= header-name "date")
+                                                        :when (not= header-name "range")
+                                                        :when (not= header-name "content-type")]
+                                                    (str header-name ":" v))))]
+                          (when-not (empty? s)
+                            s))
                         (if-not bucket
                           url
                           (str "/" bucket url)))]

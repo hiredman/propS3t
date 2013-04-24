@@ -58,14 +58,15 @@
       zero?))
 
 (defn write-stream [{:keys [aws-key aws-secret-key region]} bucket-name
-                    object-name stream & {:keys [md5sum length]}]
+                    object-name stream & {:keys [md5sum length headers]}]
   (-> (ps3/request {:request-method :put
                     :url (str "/" (URLEncoder/encode object-name))
                     :region (or region :us)
                     :bucket bucket-name
                     :headers (merge {"Date" (ps3/date)}
                                     (when md5sum
-                                      {"Content-MD5" md5sum}))
+                                      {"Content-MD5" md5sum})
+                                    headers)
                     :length length
                     :body stream}
                    aws-key
@@ -75,7 +76,7 @@
       zero?))
 
 (defn output-stream [{:keys [aws-key aws-secret-key region]} bucket-name
-                     object-name & {:keys [md5sum length]}]
+                     object-name & {:keys [md5sum length headers]}]
   (let [the-pipe (ps3/pipe)
         fut (future
               (ps3/request {:request-method :put
@@ -84,7 +85,8 @@
                             :bucket bucket-name
                             :headers (merge {"Date" (ps3/date)}
                                             (when md5sum
-                                              {"Content-MD5" md5sum}))
+                                              {"Content-MD5" md5sum})
+                                            headers)
                             :length length
                             :body (:inputstream the-pipe)}
                            aws-key
@@ -132,10 +134,11 @@
                                        aws-key
                                        aws-secret-key)]
        (with-open [^java.io.Closeable body body]
-         (ps3/xml-extract [(xml/parse body)]
-                          [:content :ListBucketResult
-                           identity :Contents]
-                          ps3/extract-key-data)))))
+         (for [item (ps3/xml-extract [(xml/parse body)]
+                                     [:content :ListBucketResult
+                                      identity :Contents]
+                                     ps3/extract-key-data)]
+           (assoc item :bucket bucket-name))))))
 
 (defn start-multipart
   [{:keys [aws-key aws-secret-key region]} bucket-name object-name]

@@ -124,3 +124,15 @@
   (is (delete-object *creds* test-bucket "write-stream-test"))
   (is (not (contains? (set (map :key (list-bucket *creds* test-bucket "" 10)))
                       "write-stream-test"))))
+
+(deftest t-headers
+  (write-stream *creds* test-bucket "write-stream-test"
+                (ByteArrayInputStream.
+                 (.getBytes "hello world"))
+                :length 11
+                :headers {"content-type" "application/octet-stream"})
+  (is (contains? (set (map :key (list-bucket *creds* test-bucket "" 10)))
+                 "write-stream-test"))
+  (is (delete-object *creds* test-bucket "write-stream-test"))
+  (is (not (contains? (set (map :key (list-bucket *creds* test-bucket "" 10)))
+                      "write-stream-test"))))
