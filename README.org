@@ -24,6 +24,6 @@ see tests
 
 * License
 
-Copyright (C) 2012 Kevin Downey
+Copyright (C) 2013 Kevin Downey
 
 Distributed under the Eclipse Public License, the same as Clojure.
