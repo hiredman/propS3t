@@ -14,7 +14,7 @@ Also an attempt to support 80% of jets3t features with 20% of the code.
 
 see tests
 
-* TODO
+* Todo
  - multi-region support
  - reduced redundency storage support
  - metadata read?
@@ -24,6 +24,6 @@ see tests
 
 * License
 
-Copyright (C) 2013 Kevin Downey
+Copyright (C) 2014 Kevin Downey
 
 Distributed under the Eclipse Public License, the same as Clojure.
