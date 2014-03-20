@@ -4,7 +4,9 @@
   (:import (java.io FilterOutputStream)
            (java.net URLEncoder)))
 
-(defn create-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
+(defn create-bucket
+  "does what it says, creates a an s3 bucket with the given name"
+  [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> (ps3/request {:request-method :put
                     :url "/"
                     :region (or region :us)
@@ -16,7 +18,9 @@
       count
       zero?))
 
-(defn list-buckets [{:keys [aws-key aws-secret-key]}]
+(defn list-buckets
+  "lists the available buckets for an account, result is a seq of maps {:name bucket-name}"
+  [{:keys [aws-key aws-secret-key]}]
   (let [{:keys [body]} (ps3/request {:request-method :get
                                      :url "/"
                                      :headers {"Date" (ps3/date)}
@@ -34,7 +38,9 @@
                                      :content
                                      first)})))))
 
-(defn delete-bucket [{:keys [aws-key aws-secret-key region]} bucket-name]
+(defn delete-bucket
+  "deletes the named bucket"
+  [{:keys [aws-key aws-secret-key region]} bucket-name]
   (-> (ps3/request {:request-method :delete
                     :url "/"
                     :region (or region :us)
@@ -45,7 +51,9 @@
       :body
       nil?))
 
-(defn delete-object [{:keys [aws-key aws-secret-key region]} bucket-name object-name]
+(defn delete-object
+  "deletes the object with the given key name in the given bucket"
+  [{:keys [aws-key aws-secret-key region]} bucket-name object-name]
   (-> (ps3/request {:request-method :delete
                     :url (str "/" (URLEncoder/encode object-name))
                     :region (or region :us)
@@ -57,8 +65,11 @@
       count
       zero?))
 
-(defn write-stream [{:keys [aws-key aws-secret-key region]} bucket-name
-                    object-name stream & {:keys [md5sum length headers]}]
+(defn write-stream
+  "writes an inputstream to the named object in the named bucket
+  pass additional headers via :headers
+  you must pass a :length"
+  [{:keys [aws-key aws-secret-key region]} bucket-name object-name stream & {:keys [md5sum length headers]}]
   (-> (ps3/request {:request-method :put
                     :url (str "/" (URLEncoder/encode object-name))
                     :region (or region :us)
