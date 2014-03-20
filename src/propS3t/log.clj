@@ -31,13 +31,12 @@
       (maintain-loop logger))))
 
 (defn make-prime [logger creds bucket prefix]
-  (future
-    (.put logger {:creds creds
-                  :bucket bucket
-                  :prefix prefix
-                  :current-stream nil
-                  :created-at nil
-                  :space nil})))
+  (.put logger {:creds creds
+                :bucket bucket
+                :prefix prefix
+                :current-stream nil
+                :created-at nil
+                :space nil}))
 
 (defonce registry (atom {}))
 
